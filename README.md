@@ -333,3 +333,60 @@ if __name__ == "__main__":
     window = HydrocarbonPlotter()
     window.show()
     sys.exit(app.exec_())
+
+
+    WEEK2
+    import pubchempy as pcp
+from PIL import Image
+import requests
+from io import BytesIO
+
+# Fetch theobromine by name
+compounds = pcp.get_compounds('theobromine', 'name')
+compound = compounds[0]
+
+# Print formatted output
+print("=" * 60)
+print("THEOBROMINE - COMPOUND DATA")
+print("=" * 60)
+
+print("\n📋 Basic Information:")
+print(f"   Compound ID (CID): {compound.cid}")
+print(f"   IUPAC Name: {compound.iupac_name}")
+
+print("\n🧪 Molecular Properties:")
+print(f"   Molecular Formula: {compound.molecular_formula}")
+print(f"   Molecular Weight: {compound.molecular_weight} g/mol")
+print(f"   Exact Mass: {compound.exact_mass}")
+
+print("\n🔗 Structure Representations:")
+print(f"   SMILES: {compound.smiles}")
+print(f"   InChI: {compound.inchi}")
+print(f"   InChIKey: {compound.inchikey}")
+
+print("\n🖼️  Structure Images:")
+print(f"   2D Structure: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={compound.cid}&t=l")
+print(f"   3D Structure: https://pubchem.ncbi.nlm.nih.gov/compound/{compound.cid}#section=3D-Conformer")
+
+# Download and display the 2D structure image
+print("\n   Fetching 2D structure image...")
+img_url = f"https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={compound.cid}&t=l"
+response = requests.get(img_url)
+img = Image.open(BytesIO(response.content))
+img.show()
+print("   ✓ Structure image opened in default viewer")
+
+print("\n⚛️  Chemical Properties:")
+print(f"   Complexity: {compound.complexity}")
+print(f"   TPSA: {compound.tpsa} Ų")
+print(f"   H-Bond Donors: {compound.h_bond_donor_count}")
+print(f"   H-Bond Acceptors: {compound.h_bond_acceptor_count}")
+print(f"   Rotatable Bonds: {compound.rotatable_bond_count}")
+print(f"   Heavy Atoms: {compound.heavy_atom_count}")
+print(f"   Charge: {compound.charge}")
+
+print("\n🏷️  Common Names:")
+for i, synonym in enumerate(compound.synonyms[:5], 1):
+    print(f"   {i}. {synonym}")
+
+print("\n" + "=" * 60)
