@@ -390,3 +390,352 @@ for i, synonym in enumerate(compound.synonyms[:5], 1):
     print(f"   {i}. {synonym}")
 
 print("\n" + "=" * 60)
+
+WEEK 2 PART 2
+
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+import requests
+from io import BytesIO
+
+class MoleculeViewer:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Molecule Explorer")
+        self.root.geometry("900x800")
+        self.root.configure(bg="#f0f4f8")
+        self.root.resizable(True, True)
+        
+        # Molecule database
+        self.molecules = [
+            {
+                "name": "Ethanol",
+                "formula": "C₂H₆O",
+                "smiles": "CCO",
+                "weight": "46.07",
+                "hbd": "1",
+                "hba": "1",
+                "tpsa": "20.23",
+                "complexity": "2.00",
+                "heavy_atoms": "3",
+                "rotatable_bonds": "0",
+                "description": "Common alcohol found in beverages",
+                "cid": "702"
+            },
+            {
+                "name": "Caffeine",
+                "formula": "C₈H₁₀N₄O₂",
+                "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+                "weight": "194.19",
+                "hbd": "0",
+                "hba": "6",
+                "tpsa": "58.44",
+                "complexity": "293",
+                "heavy_atoms": "14",
+                "rotatable_bonds": "0",
+                "description": "Stimulant found in coffee and tea",
+                "cid": "2519"
+            },
+            {
+                "name": "Theobromine",
+                "formula": "C₇H₈N₄O₂",
+                "smiles": "CN1C=NC2=C1C(=O)NC(=O)N2C",
+                "weight": "180.16",
+                "hbd": "1",
+                "hba": "6",
+                "tpsa": "67.20",
+                "complexity": "267",
+                "heavy_atoms": "13",
+                "rotatable_bonds": "0",
+                "description": "Compound found in chocolate",
+                "cid": "5429"
+            },
+            {
+                "name": "Aspirin",
+                "formula": "C₉H₈O₄",
+                "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
+                "weight": "180.16",
+                "hbd": "1",
+                "hba": "4",
+                "tpsa": "63.60",
+                "complexity": "212",
+                "heavy_atoms": "13",
+                "rotatable_bonds": "3",
+                "description": "Common pain reliever and anti-inflammatory",
+                "cid": "2244"
+            },
+            {
+                "name": "Glucose",
+                "formula": "C₆H₁₂O₆",
+                "smiles": "C(C1C(C(C(C(O1)O)O)O)O)O",
+                "weight": "180.16",
+                "hbd": "5",
+                "hba": "6",
+                "tpsa": "110.38",
+                "complexity": "130",
+                "heavy_atoms": "12",
+                "rotatable_bonds": "1",
+                "description": "Simple sugar, primary energy source for cells",
+                "cid": "5793"
+            },
+            {
+                "name": "Acetaminophen",
+                "formula": "C₈H₉NO₂",
+                "smiles": "CC(=O)NC1=CC=C(C=C1)O",
+                "weight": "151.16",
+                "hbd": "2",
+                "hba": "3",
+                "tpsa": "49.33",
+                "complexity": "153",
+                "heavy_atoms": "11",
+                "rotatable_bonds": "2",
+                "description": "Pain reliever and fever reducer (Tylenol)",
+                "cid": "1983"
+            },
+            {
+                "name": "Dopamine",
+                "formula": "C₈H₁₁NO₂",
+                "smiles": "C1=CC(=C(C=C1CCN)O)O",
+                "weight": "153.18",
+                "hbd": "3",
+                "hba": "3",
+                "tpsa": "66.48",
+                "complexity": "91.3",
+                "heavy_atoms": "11",
+                "rotatable_bonds": "2",
+                "description": "Neurotransmitter associated with reward and pleasure",
+                "cid": "681"
+            },
+            {
+                "name": "Vitamin C",
+                "formula": "C₆H₈O₆",
+                "smiles": "C(C(C1C(=C(C(=O)O1)O)O)O)O",
+                "weight": "176.12",
+                "hbd": "4",
+                "hba": "6",
+                "tpsa": "107.22",
+                "complexity": "232",
+                "heavy_atoms": "12",
+                "rotatable_bonds": "2",
+                "description": "Essential nutrient and antioxidant",
+                "cid": "54670067"
+            }
+        ]
+        
+        self.current_index = 0
+        self.setup_ui()
+        self.load_molecule()
+    
+    def setup_ui(self):
+        # Title
+        title_label = tk.Label(
+            self.root,
+            text="Molecule Explorer",
+            font=("Arial", 22, "bold"),
+            bg="#f0f4f8",
+            fg="#1e3a8a"
+        )
+        title_label.pack(pady=10)
+        
+        # Subtitle
+        subtitle_label = tk.Label(
+            self.root,
+            text="Learn about common molecules and their properties",
+            font=("Arial", 11),
+            bg="#f0f4f8",
+            fg="#64748b"
+        )
+        subtitle_label.pack(pady=(0, 10))
+        
+        # Main frame
+        main_frame = tk.Frame(self.root, bg="white", relief=tk.RAISED, borderwidth=2)
+        main_frame.pack(padx=30, pady=5, fill=tk.BOTH, expand=True)
+        
+        # Navigation frame
+        nav_frame = tk.Frame(main_frame, bg="white")
+        nav_frame.pack(pady=10)
+        
+        # Previous button
+        self.prev_btn = tk.Button(
+            nav_frame,
+            text="← Previous",
+            command=self.previous_molecule,
+            font=("Arial", 12, "bold"),
+            bg="#6366f1",
+            fg="#000000",
+            activebackground="#4f46e5",
+            activeforeground="#000000",
+            padx=20,
+            pady=10,
+            relief=tk.FLAT,
+            cursor="hand2"
+        )
+        self.prev_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Molecule name
+        self.name_label = tk.Label(
+            nav_frame,
+            text="",
+            font=("Arial", 20, "bold"),
+            bg="white",
+            fg="#1e3a8a"
+        )
+        self.name_label.pack(side=tk.LEFT, padx=30)
+        
+        # Next button
+        self.next_btn = tk.Button(
+            nav_frame,
+            text="Next →",
+            command=self.next_molecule,
+            font=("Arial", 12, "bold"),
+            bg="#6366f1",
+            fg="#000000",
+            activebackground="#4f46e5",
+            activeforeground="#000000",
+            padx=20,
+            pady=10,
+            relief=tk.FLAT,
+            cursor="hand2"
+        )
+        self.next_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Description
+        self.desc_label = tk.Label(
+            main_frame,
+            text="",
+            font=("Arial", 11),
+            bg="white",
+            fg="#64748b"
+        )
+        self.desc_label.pack(pady=(0, 10))
+        
+        # Counter
+        self.counter_label = tk.Label(
+            main_frame,
+            text="",
+            font=("Arial", 10),
+            bg="white",
+            fg="#94a3b8"
+        )
+        self.counter_label.pack()
+        
+        # Image frame
+        self.image_frame = tk.Frame(main_frame, bg="#f8fafc", relief=tk.SUNKEN, borderwidth=1)
+        self.image_frame.pack(pady=10, padx=20)
+        
+        self.image_label = tk.Label(self.image_frame, bg="#f8fafc")
+        self.image_label.pack(pady=10)
+        
+        # Properties frame
+        prop_frame = tk.Frame(main_frame, bg="white")
+        prop_frame.pack(pady=8, padx=20, fill=tk.X)
+        
+        # Create 3x2 grid for properties
+        self.prop_frames = []
+        colors = [("#dbeafe", "#1e40af"), ("#e9d5ff", "#6b21a8"), 
+                  ("#d1fae5", "#065f46"), ("#fed7aa", "#c2410c"),
+                  ("#fce7f3", "#9f1239"), ("#e0e7ff", "#3730a3")]
+        labels = ["Molecular Formula", "Molecular Weight", "H-Bond Donors", 
+                  "H-Bond Acceptors", "TPSA", "Complexity"]
+        
+        for i in range(6):
+            row = i // 3
+            col = i % 3
+            
+            frame = tk.Frame(prop_frame, bg=colors[i][0], relief=tk.RAISED, borderwidth=1)
+            frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            
+            label = tk.Label(
+                frame,
+                text=labels[i],
+                font=("Arial", 10, "bold"),
+                bg=colors[i][0],
+                fg=colors[i][1]
+            )
+            label.pack(pady=(10, 5))
+            
+            value = tk.Label(
+                frame,
+                text="",
+                font=("Arial", 16, "bold"),
+                bg=colors[i][0],
+                fg=colors[i][1]
+            )
+            value.pack(pady=(0, 10))
+            
+            self.prop_frames.append(value)
+        
+        prop_frame.columnconfigure(0, weight=1)
+        prop_frame.columnconfigure(1, weight=1)
+        prop_frame.columnconfigure(2, weight=1)
+        
+        # SMILES frame
+        smiles_outer = tk.Frame(main_frame, bg="#f8fafc", relief=tk.SUNKEN, borderwidth=1)
+        smiles_outer.pack(pady=8, padx=20, fill=tk.X)
+        
+        smiles_title = tk.Label(
+            smiles_outer,
+            text="SMILES String",
+            font=("Arial", 10, "bold"),
+            bg="#f8fafc",
+            fg="#475569"
+        )
+        smiles_title.pack(pady=(10, 5))
+        
+        self.smiles_label = tk.Label(
+            smiles_outer,
+            text="",
+            font=("Courier", 10),
+            bg="#f8fafc",
+            fg="#1e293b",
+            wraplength=700
+        )
+        self.smiles_label.pack(pady=(0, 10), padx=10)
+    
+    def load_molecule(self):
+        mol = self.molecules[self.current_index]
+        
+        # Update labels
+        self.name_label.config(text=mol["name"])
+        self.desc_label.config(text=mol["description"])
+        self.counter_label.config(text=f"{self.current_index + 1} of {len(self.molecules)}")
+        
+        # Update properties
+        self.prop_frames[0].config(text=mol["formula"])
+        self.prop_frames[1].config(text=f"{mol['weight']} g/mol")
+        self.prop_frames[2].config(text=mol["hbd"])
+        self.prop_frames[3].config(text=mol["hba"])
+        self.prop_frames[4].config(text=f"{mol['tpsa']} Ų")
+        self.prop_frames[5].config(text=mol["complexity"])
+        
+        # Update SMILES
+        self.smiles_label.config(text=mol["smiles"])
+        
+        # Load image
+        self.load_image(mol["cid"])
+    
+    def load_image(self, cid):
+        try:
+            url = f"https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid={cid}&t=l"
+            response = requests.get(url)
+            img_data = Image.open(BytesIO(response.content))
+            img_data = img_data.resize((350, 350), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img_data)
+            self.image_label.config(image=photo)
+            self.image_label.image = photo  # Keep a reference
+        except Exception as e:
+            self.image_label.config(text=f"Error loading image: {e}")
+    
+    def next_molecule(self):
+        self.current_index = (self.current_index + 1) % len(self.molecules)
+        self.load_molecule()
+    
+    def previous_molecule(self):
+        self.current_index = (self.current_index - 1) % len(self.molecules)
+        self.load_molecule()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MoleculeViewer(root)
+    root.mainloop()
